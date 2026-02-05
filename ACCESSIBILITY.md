@@ -3,10 +3,12 @@
 This document tracks the ongoing effort to make XMage accessible to screen reader
 users, specifically **NVDA on Windows** and **VoiceOver on macOS**.
 
-## Current Status: Phase 3 — Keyboard Navigation (Complete)
+## Current Status: Phase 4 — Live Announcements (Complete)
 
-Phases 1 (Foundation), 2 (Card Accessibility), and 3 (Keyboard Navigation) are
-complete. Cards are now focusable and clickable via keyboard.
+Phases 1 (Foundation), 2 (Card Accessibility), 3 (Keyboard Navigation), and
+4 (Live Announcements) are complete. Screen readers now proactively announce
+game state changes including phase transitions, priority, life totals, stack
+events, and combat.
 
 ### What Works After Phase 1
 
@@ -186,27 +188,73 @@ This means all game actions that work via mouse click also work via keyboard:
 | `Mage.Client/.../cards/Cards.java` | Made `cardArea` a focus cycle root (`setFocusCycleRoot(true)`) so Tab cycles within hand/stack zone cards. |
 | `Mage.Client/.../game/BattlefieldPanel.java` | Made `jPanel` a focus cycle root (`setFocusCycleRoot(true)`) so Tab cycles within battlefield permanents. |
 
+## What Works After Phase 4
+
+- **Phase/step transitions announced**: when the game moves to a new phase or
+  step, screen readers announce it. Examples:
+  - `"Turn 3, Precombat Main"`
+  - `"Declare Attackers"`
+  - `"End Turn"`
+
+- **Priority changes announced**: when priority passes between players, screen
+  readers announce who has priority:
+  - `"Your priority"` (when it's the local player's turn to act)
+  - `"OpponentName's priority"`
+
+- **Life total changes announced**: when any player's life total changes, the
+  old and new values are announced:
+  - `"Your life: 20 -> 17"`
+  - `"OpponentName's life: 15 -> 12"`
+
+- **Stack events announced**: when new spells or abilities are added to the
+  stack, they are announced:
+  - `"Lightning Bolt on the stack"`
+  - `"Llanowar Elves's ability on the stack"` (for abilities, the rules text
+    is used if available)
+
+- **Combat announced**: when combat groups change (attackers declared, blockers
+  assigned), a summary is announced:
+  - `"Combat: Grizzly Bears attacking OpponentName"`
+  - `"Combat: Serra Angel attacking OpponentName blocked by Soldier Token"`
+
+### How Live Announcements Work
+
+A hidden `JLabel` component (`accessibilityAnnouncer`) is added to the shortcuts
+panel in `GamePanel`. Each time `updateGame()` runs, the method
+`checkAndAnnounceGameStateChanges()` compares the current `GameView` with
+previously saved state and builds a list of changes. These are joined into a
+single string and set as the label's accessible name via
+`AccessibleContext.firePropertyChange(ACCESSIBLE_NAME_PROPERTY, ...)`.
+
+Screen readers monitoring the accessibility tree detect the property change and
+speak the new text. This works on:
+- **NVDA (Windows)**: via Java Access Bridge property change notifications
+- **VoiceOver (macOS)**: via the native accessibility bridge
+
+**First-update suppression**: on game start, the first call to
+`checkAndAnnounceGameStateChanges()` only saves state without announcing,
+to avoid flooding the screen reader with the initial game state.
+
+### What Is Tracked for Change Detection
+
+| State | Field | Compared Per Update |
+|-------|-------|---------------------|
+| Phase step | `previousStep` (`PhaseStep` enum) | Enum identity (`!=`) |
+| Turn number | `previousTurn` (`int`) | Integer inequality |
+| Priority player | `previousPriorityPlayer` (`String`) | String `.equals()` |
+| Life totals | `previousLifeTotals` (`Map<UUID, Integer>`) | Per-player integer comparison |
+| Stack objects | `previousStackIds` (`Set<UUID>`) | Set difference (new UUIDs) |
+| Combat groups | `previousCombatGroupCount` (`int`) | Count change |
+
+## Files Modified in Phase 4
+
+| File | Changes |
+|------|---------|
+| `Mage.Client/.../game/GamePanel.java` | Added `javax.accessibility.AccessibleContext` import. Added hidden `accessibilityAnnouncer` JLabel in `initComponents()`. Added `announceToScreenReader(String)` method that fires `ACCESSIBLE_NAME_PROPERTY` change events. Added `checkAndAnnounceGameStateChanges(GameView)` that detects phase, priority, life, stack, and combat changes. Added `saveAccessibilityState(GameView)` to persist state between updates. Added 8 tracking fields. Called from end of `updateGame()`. |
+
 ## Roadmap
 
-### Phase 4 — Live Announcements
-
-Proactively announce game state changes so screen reader users can follow game
-flow without polling.
-
-- Announce priority changes: "Your priority — Main Phase 1"
-- Announce phase transitions: "Combat — Declare Attackers"
-- Announce stack events: "Opponent casts Lightning Bolt targeting you"
-- Announce life total changes: "Your life: 20 → 17"
-- Announce combat assignments: "Grizzly Bears attacking, blocked by Soldier Token"
-
-Implementation: use `AccessibleContext.firePropertyChange()` on a live-region
-component, or append to the game log `JTextPane` with proper accessible text
-change events.
-
-**Key files**: `GamePanel.java`, `FeedbackPanel.java`, `ChatPanelBasic.java`,
-`GameTextPane.java`
-
-### Phase 5 — Deck Editor & Dialogs
+### Phase 5 — Deck Editor & Dialogs (Next)
 
 - Ensure all modal dialogs (card selection, choice prompts, pick dialogs) have
   proper tab order and accessible labels.
@@ -239,6 +287,20 @@ change events.
    - Press Ctrl+Tab to jump to the Battlefield. Use arrows to navigate permanents.
    - Press Enter on a permanent to activate abilities or select it as a target
      when prompted.
+
+4. **Live announcements (Phase 4)**: Start a game against AI with a screen reader
+   active.
+   - Verify that phase transitions are announced (e.g., "Precombat Main",
+     "Declare Attackers") as you pass through turn phases.
+   - Verify priority changes are announced ("Your priority" when it's your turn
+     to act).
+   - Cast a spell and verify the stack event is announced (e.g., "Lightning Bolt
+     on the stack").
+   - Take damage and verify life total changes are announced (e.g., "Your life:
+     20 -> 17").
+   - Enter combat and verify attacker/blocker announcements.
+   - Verify that the initial game load does NOT flood with announcements (first
+     update is suppressed).
 
 ### Automated Testing (Future)
 

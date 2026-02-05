@@ -36,6 +36,8 @@ import mage.util.MultiAmountMessage;
 import mage.util.StreamUtils;
 import mage.view.*;
 import org.apache.log4j.Logger;
+
+import javax.accessibility.AccessibleContext;
 import org.mage.plugins.card.utils.impl.ImageManagerImpl;
 
 import javax.swing.Timer;
@@ -1317,6 +1319,9 @@ public final class GamePanel extends javax.swing.JPanel {
         //logger.info("game update, message = " + lastGameData.messageId + ", options = " + lastGameData.options + ", priority = " + lastGameData.game.getPriorityPlayerName());
         feedbackPanel.disableUndo();
         feedbackPanel.updateOptions(lastGameData.options);
+
+        // Accessibility: detect and announce game state changes to screen readers (Phase 4)
+        checkAndAnnounceGameStateChanges(lastGameData.game);
 
         this.revalidate();
         this.repaint();
@@ -2755,6 +2760,14 @@ public final class GamePanel extends javax.swing.JPanel {
         // split: game <|> chat/log
         splitGameAndBigCard.setLeftComponent(splitBattlefieldAndChats);
         splitGameAndBigCard.setRightComponent(bigCardPanel);
+
+        // Accessibility: hidden component for screen reader live announcements (Phase 4).
+        // Screen readers detect property change events on this label's AccessibleContext.
+        accessibilityAnnouncer = new JLabel();
+        accessibilityAnnouncer.setPreferredSize(new Dimension(0, 0));
+        accessibilityAnnouncer.getAccessibleContext().setAccessibleName("");
+        accessibilityAnnouncer.getAccessibleContext().setAccessibleDescription("Game event announcements");
+        pnlShortCuts.add(accessibilityAnnouncer);
     }
 
     private void removeListener() {
@@ -3202,6 +3215,174 @@ public final class GamePanel extends javax.swing.JPanel {
         }
     }
 
+    // ---- Accessibility: live announcement methods (Phase 4) ----
+
+    /**
+     * Send an announcement to screen readers by updating the hidden announcer
+     * component's accessible name and firing a property change event.
+     */
+    private void announceToScreenReader(String message) {
+        if (accessibilityAnnouncer == null || message == null || message.isEmpty()) {
+            return;
+        }
+        String oldName = accessibilityAnnouncer.getAccessibleContext().getAccessibleName();
+        // Append a zero-width space to force a change event even if the text is the same
+        // (e.g., repeated priority changes to the same player)
+        if (message.equals(oldName)) {
+            message = message + "\u200B";
+        }
+        accessibilityAnnouncer.getAccessibleContext().setAccessibleName(message);
+        accessibilityAnnouncer.getAccessibleContext().firePropertyChange(
+                AccessibleContext.ACCESSIBLE_NAME_PROPERTY, oldName, message);
+    }
+
+    /**
+     * Compare current game state with previously saved state and announce
+     * meaningful changes to screen readers. Called at the end of updateGame().
+     */
+    private void checkAndAnnounceGameStateChanges(GameView game) {
+        if (game == null) {
+            return;
+        }
+
+        // First update: save state without announcing (avoids flooding on game start)
+        if (!accessibilityStateInitialized) {
+            saveAccessibilityState(game);
+            accessibilityStateInitialized = true;
+            return;
+        }
+
+        List<String> announcements = new ArrayList<>();
+
+        // Phase/step changes
+        PhaseStep currentStep = game.getStep();
+        int currentTurn = game.getTurn();
+        if (currentStep != null && currentStep != previousStep) {
+            String stepName = currentStep.toString();
+            if (currentTurn != previousTurn) {
+                announcements.add("Turn " + currentTurn + ", " + stepName);
+            } else {
+                announcements.add(stepName);
+            }
+        } else if (currentTurn != previousTurn && currentTurn > 0) {
+            announcements.add("Turn " + currentTurn);
+        }
+
+        // Priority changes
+        String currentPriority = game.getPriorityPlayerName();
+        if (currentPriority != null && !currentPriority.isEmpty()
+                && !currentPriority.equals(previousPriorityPlayer)) {
+            boolean isMyPriority = false;
+            if (playerId != null) {
+                for (PlayerView player : game.getPlayers()) {
+                    if (player.getPlayerId().equals(playerId)
+                            && player.getName().equals(currentPriority)) {
+                        isMyPriority = true;
+                        break;
+                    }
+                }
+            }
+            if (isMyPriority) {
+                announcements.add("Your priority");
+            } else {
+                announcements.add(currentPriority + "'s priority");
+            }
+        }
+
+        // Life total changes
+        for (PlayerView player : game.getPlayers()) {
+            Integer prevLife = previousLifeTotals.get(player.getPlayerId());
+            if (prevLife != null && prevLife != player.getLife()) {
+                boolean isMe = player.getPlayerId().equals(playerId);
+                String name = isMe ? "Your" : player.getName() + "'s";
+                announcements.add(name + " life: " + prevLife + " -> " + player.getLife());
+            }
+        }
+
+        // Stack changes — announce new entries
+        Set<UUID> currentStackIds = new HashSet<>(game.getStack().keySet());
+        for (UUID stackId : currentStackIds) {
+            if (!previousStackIds.contains(stackId)) {
+                CardView card = game.getStack().get(stackId);
+                if (card != null) {
+                    String stackItemName;
+                    if (card instanceof StackAbilityView) {
+                        List<String> rules = card.getRules();
+                        if (!rules.isEmpty()) {
+                            stackItemName = rules.get(0).replaceAll("<[^>]*>", "").trim();
+                        } else {
+                            stackItemName = "Ability from " + card.getName();
+                        }
+                    } else {
+                        stackItemName = card.getName();
+                    }
+                    announcements.add(stackItemName + " on the stack");
+                }
+            }
+        }
+
+        // Combat changes — announce attackers and blockers
+        List<CombatGroupView> combat = game.getCombat();
+        int currentCombatGroups = (combat != null) ? combat.size() : 0;
+        if (currentCombatGroups > 0 && currentCombatGroups != previousCombatGroupCount) {
+            StringBuilder combatText = new StringBuilder("Combat: ");
+            boolean first = true;
+            for (CombatGroupView group : combat) {
+                for (CardView attacker : group.getAttackers().values()) {
+                    if (!first) {
+                        combatText.append(", ");
+                    }
+                    combatText.append(attacker.getName()).append(" attacking");
+                    if (!group.getDefenderName().isEmpty()) {
+                        combatText.append(" ").append(group.getDefenderName());
+                    }
+                    if (group.isBlocked()) {
+                        combatText.append(" blocked");
+                        boolean firstBlocker = true;
+                        for (CardView blocker : group.getBlockers().values()) {
+                            if (firstBlocker) {
+                                combatText.append(" by ");
+                                firstBlocker = false;
+                            } else {
+                                combatText.append(" and ");
+                            }
+                            combatText.append(blocker.getName());
+                        }
+                    }
+                    first = false;
+                }
+            }
+            announcements.add(combatText.toString());
+        }
+
+        // Save current state for next comparison
+        saveAccessibilityState(game);
+
+        // Fire announcement
+        if (!announcements.isEmpty()) {
+            announceToScreenReader(String.join(". ", announcements));
+        }
+    }
+
+    /**
+     * Save current game state for accessibility change detection.
+     */
+    private void saveAccessibilityState(GameView game) {
+        previousStep = game.getStep();
+        previousTurn = game.getTurn();
+        previousPriorityPlayer = game.getPriorityPlayerName() != null
+                ? game.getPriorityPlayerName() : "";
+        previousLifeTotals.clear();
+        for (PlayerView player : game.getPlayers()) {
+            previousLifeTotals.put(player.getPlayerId(), player.getLife());
+        }
+        previousStackIds = new HashSet<>(game.getStack().keySet());
+        List<CombatGroupView> combat = game.getCombat();
+        previousCombatGroupCount = (combat != null) ? combat.size() : 0;
+    }
+
+    // ---- End accessibility methods ----
+
     private boolean holdingPriority;
     private mage.client.components.ability.AbilityPicker abilityPicker;
     private mage.client.cards.BigCard bigCard;
@@ -3260,6 +3441,16 @@ public final class GamePanel extends javax.swing.JPanel {
     private javax.swing.JLabel txtHoldPriority;
 
     private boolean imagePanelState;
+
+    // Accessibility: state tracking for live announcements (Phase 4)
+    private PhaseStep previousStep;
+    private String previousPriorityPlayer = "";
+    private int previousTurn = 0;
+    private Map<UUID, Integer> previousLifeTotals = new HashMap<>();
+    private Set<UUID> previousStackIds = new HashSet<>();
+    private int previousCombatGroupCount = 0;
+    private boolean accessibilityStateInitialized = false;
+    private JLabel accessibilityAnnouncer;
 
 }
 
