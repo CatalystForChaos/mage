@@ -214,6 +214,10 @@
          this.revalidate();
          this.repaint();
 
+         // Accessibility: update zone description with card count
+         String zoneName = (zone != null) ? zone.toString() : "Cards";
+         this.getAccessibleContext().setAccessibleName(zoneName + " zone, " + cards.size() + (cards.size() == 1 ? " card" : " cards"));
+
          // auto-scroll (must use it at the end)
          if (changed && moveScrollbar) {
              SwingUtilities.invokeLater(() -> {
@@ -381,6 +385,10 @@
 
      public void setZone(Zone zone) {
          this.zone = zone;
+         // Accessibility: label the zone for screen readers
+         if (zone != null) {
+             this.getAccessibleContext().setAccessibleName(zone.toString() + " zone");
+         }
      }
 
      /**

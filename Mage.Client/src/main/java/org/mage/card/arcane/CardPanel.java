@@ -10,6 +10,7 @@ import mage.client.util.audio.AudioManager;
 import mage.constants.*;
 import mage.view.AbilityView;
 import mage.view.CardView;
+import mage.view.CounterView;
 import mage.view.PermanentView;
 import mage.view.StackAbilityView;
 import org.apache.log4j.Logger;
@@ -211,6 +212,9 @@ public abstract class CardPanel extends MagePermanent implements ComponentListen
         String cardType = getType(newGameCard);
         tooltipText = new TextPopup();
         tooltipText.setText(getText(cardType, newGameCard));
+
+        // Accessibility: expose card info to screen readers
+        updateAccessibleName(newGameCard, cardType);
 
         // Animation setup
         setTappedAngle(isTapped() ? CardPanel.TAPPED_ANGLE : 0);
@@ -569,6 +573,9 @@ public abstract class CardPanel extends MagePermanent implements ComponentListen
         String cardType = getType(card);
         tooltipText.setText(getText(cardType, card));
 
+        // Accessibility: expose card info to screen readers
+        updateAccessibleName(card, cardType);
+
         // Update the image
         if (mustUpdateArt) {
             updateArtImage();
@@ -819,6 +826,94 @@ public abstract class CardPanel extends MagePermanent implements ComponentListen
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Accessibility: build and set a screen-reader-friendly name for this card component.
+     * Called from constructor and update() so screen readers always have current card info.
+     * Produces concise text like: "Lightning Bolt, Instant, {R}, Lightning Bolt deals 3 damage to any target."
+     * For permanents adds state: "tapped", "summoning sickness", counters.
+     */
+    private void updateAccessibleName(CardView card, String cardType) {
+        if (card == null) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        if (card.isFaceDown()) {
+            sb.append("Face-down card");
+        } else if (card instanceof StackAbilityView || card instanceof AbilityView) {
+            // Stack abilities: just show rules text
+            sb.append("Ability");
+            for (String rule : card.getRules()) {
+                sb.append(", ").append(rule);
+            }
+        } else {
+            // Card name
+            sb.append(card.getName());
+
+            // Type line
+            if (!cardType.isEmpty()) {
+                sb.append(", ").append(cardType);
+            }
+
+            // Mana cost
+            if (!card.getManaCostStr().isEmpty()) {
+                sb.append(", ").append(card.getManaCostStr());
+            }
+
+            // Power/Toughness, Loyalty, or Defense
+            if (card.isCreature()) {
+                sb.append(", ").append(card.getPower()).append('/').append(card.getToughness());
+            } else if (card.isPlaneswalker()) {
+                sb.append(", loyalty ").append(card.getLoyalty());
+            } else if (card.isBattle()) {
+                sb.append(", defense ").append(card.getDefense());
+            }
+
+            // Permanent-specific state
+            if (isPermanent && (card instanceof PermanentView)) {
+                PermanentView perm = (PermanentView) card;
+                if (perm.isTapped()) {
+                    sb.append(", tapped");
+                }
+                if (perm.hasSummoningSickness()) {
+                    sb.append(", summoning sickness");
+                }
+                if (perm.getCounters() != null) {
+                    for (CounterView counter : perm.getCounters()) {
+                        sb.append(", ").append(counter.getCount()).append(' ').append(counter.getName()).append(counter.getCount() != 1 ? " counters" : " counter");
+                    }
+                }
+            }
+
+            // Rules text (first two lines to keep it concise)
+            if (card.getRules() != null) {
+                int rulesShown = 0;
+                for (String rule : card.getRules()) {
+                    if (rulesShown >= 2) {
+                        break;
+                    }
+                    String cleanRule = rule.replaceAll("<[^>]*>", "").trim();
+                    if (!cleanRule.isEmpty()) {
+                        sb.append(", ").append(cleanRule);
+                        rulesShown++;
+                    }
+                }
+            }
+        }
+
+        // Choosable/selected status
+        if (isChoosable) {
+            sb.append(", choosable");
+        }
+        if (isSelected) {
+            sb.append(", selected");
+        }
+
+        this.getAccessibleContext().setAccessibleName(sb.toString());
+        this.getAccessibleContext().setAccessibleDescription(getText(cardType, card));
     }
 
     @Override

@@ -139,6 +139,10 @@ public class CardArea extends JPanel implements CardEventProducer {
             loadCardsMany(showCards, bigCard, gameId);
         }
 
+        // Accessibility: announce card count for screen readers
+        int count = (showCards != null) ? showCards.size() : 0;
+        this.getAccessibleContext().setAccessibleName("Card selection, " + count + (count == 1 ? " card" : " cards"));
+
         redraw();
         fixDialogSize();
     }

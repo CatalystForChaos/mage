@@ -3,11 +3,10 @@
 This document tracks the ongoing effort to make XMage accessible to screen reader
 users, specifically **NVDA on Windows** and **VoiceOver on macOS**.
 
-## Current Status: Phase 1 — Foundation (In Progress)
+## Current Status: Phase 2 — Card Accessibility (In Progress)
 
-Phase 1 makes the core game state readable and game action buttons discoverable
-by screen readers. It does not yet make cards selectable or the battlefield
-navigable via keyboard alone.
+Phase 1 (Foundation) is complete. Phase 2 makes individual cards and zone
+containers readable by screen readers.
 
 ### What Works After Phase 1
 
@@ -82,8 +81,8 @@ No additional setup is needed beyond enabling VoiceOver (Cmd+F5). However:
 
 - VoiceOver support for Swing has historically been inconsistent across macOS
   versions. Test on the latest macOS for best results.
-- Custom-painted components (card images, mana symbols) will not be readable
-  until Phase 2 adds `AccessibleContext` overrides to card panels.
+- Card panels now have `AccessibleContext` names (added in Phase 2), but
+  custom-painted decorations (foil effects, mana symbol images) remain visual-only.
 
 ## Files Modified in Phase 1
 
@@ -94,24 +93,44 @@ No additional setup is needed beyond enabling VoiceOver (Cmd+F5). However:
 | `Mage.Client/.../game/HelperPanel.java` | Added `setAccessibleName()` to all 4 buttons at init and on every text change. Exposed game prompt text via accessible name on panel and text area. |
 | `Mage.Client/.../game/FeedbackPanel.java` | Added `setAccessibleName()` to panel and all 4 buttons at init. Kept names in sync in `setButtonState()` and `updateOptions()`. |
 
+## What Works After Phase 2
+
+- **Individual cards are readable**: each card component (`CardPanel`) exposes
+  a concise accessible name built from the `CardView` data. For example:
+  `"Lightning Bolt, Instant, {R}, Lightning Bolt deals 3 damage to any target."`
+
+- **Permanent state is included**: for battlefield permanents, the accessible
+  name includes tapped/untapped status, summoning sickness, and counters.
+  Example: `"Llanowar Elves, Creature — Elf Druid, {G}, 1/1, tapped, 2 +1/+1 counters"`
+
+- **Face-down cards**: announced as "Face-down card" without leaking hidden info.
+
+- **Stack abilities**: announced as "Ability, [rules text]".
+
+- **Choosable/selected state**: when a card is a valid target or already selected
+  during targeting, this is appended to the accessible name.
+
+- **Full card text as description**: the `AccessibleDescription` contains the
+  complete tooltip text (name, cost, type, P/T, all rules, set info) for users
+  who want to read the full Oracle text.
+
+- **Zone containers have accessible names**: the Hand, Stack, Battlefield, and
+  card selection dialogs announce their zone name and card count. Example:
+  `"Hand zone, 7 cards"`, `"Battlefield, 4 permanents"`,
+  `"Card selection, 3 cards"`.
+
+## Files Modified in Phase 2
+
+| File | Changes |
+|------|---------|
+| `Mage.Client/.../arcane/CardPanel.java` | Added `updateAccessibleName()` method that builds concise screen-reader text from `CardView` data (name, type, cost, P/T, state, rules). Called from constructor and `update(CardView)`. Sets both `accessibleName` and `accessibleDescription`. Added `CounterView` import. |
+| `Mage.Client/.../cards/Cards.java` | Added accessible name to zone in `setZone()` and updated with card count in `loadCards()`. |
+| `Mage.Client/.../game/BattlefieldPanel.java` | Added accessible name with permanent count at end of `update()`. |
+| `Mage.Client/.../cards/CardArea.java` | Added accessible name with card count in `loadCards()`. |
+
 ## Roadmap
 
-### Phase 2 — Card Accessibility
-
-Make individual cards readable by screen readers.
-
-- Override `getAccessibleContext()` on `CardPanel` (in `org/mage/card/arcane/`)
-  to return card name, type line, mana cost, power/toughness, abilities text,
-  and current state (tapped, counters, attachments).
-- Set `AccessibleRole` on card components so screen readers announce them as
-  interactive items.
-- Add accessible names to zone containers (Hand, Battlefield, Stack, Graveyard,
-  Exile) including card counts.
-
-**Key files**: `CardPanel.java`, `BattlefieldPanel.java`, `Cards.java`,
-`CardArea.java`
-
-### Phase 3 — Keyboard Navigation
+### Phase 3 — Keyboard Navigation (Next)
 
 Make the game playable without a mouse.
 
