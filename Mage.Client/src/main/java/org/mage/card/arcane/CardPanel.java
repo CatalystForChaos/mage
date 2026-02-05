@@ -120,18 +120,43 @@ public abstract class CardPanel extends MagePermanent implements ComponentListen
         this.gameId = gameId;
         this.needFullPermanentRender = needFullPermanentRender;
 
-        /*
+        // Accessibility: make card focusable for keyboard navigation (Phase 3)
         this.setFocusable(true);
         this.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
             public void focusGained(FocusEvent e) {
-                //LOGGER.warn("focus gained " + getCard().getName());
+                repaint();
             }
 
+            @Override
             public void focusLost(FocusEvent e) {
-                //LOGGER.warn("focus lost " + getCard().getName());
+                repaint();
             }
         });
-         */
+
+        // Accessibility: keyboard handlers for card interaction
+        this.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                switch (e.getKeyCode()) {
+                    case java.awt.event.KeyEvent.VK_ENTER:
+                    case java.awt.event.KeyEvent.VK_SPACE:
+                        fireKeyboardClick();
+                        e.consume();
+                        break;
+                    case java.awt.event.KeyEvent.VK_LEFT:
+                    case java.awt.event.KeyEvent.VK_UP:
+                        focusAdjacentCard(-1);
+                        e.consume();
+                        break;
+                    case java.awt.event.KeyEvent.VK_RIGHT:
+                    case java.awt.event.KeyEvent.VK_DOWN:
+                        focusAdjacentCard(1);
+                        e.consume();
+                        break;
+                }
+            }
+        });
 
         // Gather info about the card (all card maniputations possible with permanents only, also render can be different)
         this.isPermanent = this.getGameCard() instanceof PermanentView && !this.getGameCard().inViewerOnly();
@@ -375,6 +400,18 @@ public abstract class CardPanel extends MagePermanent implements ComponentListen
         // card rotating implemented by top layer panel
         // TODO: is CardPanel can be used without MageLayer?
         super.paint(g);
+
+        // Accessibility: draw focus indicator border so keyboard users can see which card is focused
+        if (isFocusOwner()) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setColor(new Color(0, 180, 255)); // bright blue
+                g2.setStroke(new BasicStroke(3));
+                g2.drawRect(1, 1, getWidth() - 3, getHeight() - 3);
+            } finally {
+                g2.dispose();
+            }
+        }
     }
 
     @Override
@@ -914,6 +951,85 @@ public abstract class CardPanel extends MagePermanent implements ComponentListen
 
         this.getAccessibleContext().setAccessibleName(sb.toString());
         this.getAccessibleContext().setAccessibleDescription(getText(cardType, card));
+    }
+
+    /**
+     * Accessibility: simulate a card click via keyboard (Enter/Space).
+     * Replicates the single-click path of mouseClicked() by populating
+     * TransferData and calling the callback directly.
+     */
+    private void fireKeyboardClick() {
+        if (callback == null) {
+            return;
+        }
+        data.setComponent(this);
+        data.setCard(this.getGameCard());
+        data.setGameId(this.gameId);
+        MouseEvent syntheticEvent = new MouseEvent(
+                this, MouseEvent.MOUSE_CLICKED,
+                System.currentTimeMillis(), 0,
+                getWidth() / 2, getHeight() / 2,
+                1, false, MouseEvent.BUTTON1
+        );
+        callback.mouseClicked(syntheticEvent, data, false);
+    }
+
+    /**
+     * Accessibility: move focus to the next or previous card in the same zone container.
+     * Used by arrow key handlers to navigate between cards within a zone.
+     *
+     * @param direction -1 for previous (left/up), +1 for next (right/down)
+     */
+    private void focusAdjacentCard(int direction) {
+        Container parent = this.getCardContainer();
+        if (parent == null) {
+            parent = this.getParent();
+        }
+        if (parent == null) {
+            return;
+        }
+
+        // Collect all MageCard components in the container
+        List<Component> cardComponents = new ArrayList<>();
+        for (Component comp : parent.getComponents()) {
+            if (comp instanceof MageCard) {
+                cardComponents.add(comp);
+            }
+        }
+
+        // Sort by position: top-to-bottom, then left-to-right
+        cardComponents.sort((a, b) -> {
+            int cmp = Integer.compare(a.getY(), b.getY());
+            if (cmp != 0) {
+                return cmp;
+            }
+            return Integer.compare(a.getX(), b.getX());
+        });
+
+        // Find the current card's top-level wrapper (MageLayer) in the sorted list
+        MageCard topRef = this.getTopPanelRef();
+        if (topRef == null) {
+            topRef = this;
+        }
+        int currentIndex = -1;
+        for (int i = 0; i < cardComponents.size(); i++) {
+            if (cardComponents.get(i) == topRef || cardComponents.get(i) == this) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex < 0) {
+            return;
+        }
+
+        int targetIndex = currentIndex + direction;
+        if (targetIndex >= 0 && targetIndex < cardComponents.size()) {
+            Component target = cardComponents.get(targetIndex);
+            if (target instanceof MageCard) {
+                ((MageCard) target).getMainPanel().requestFocusInWindow();
+            }
+        }
     }
 
     @Override

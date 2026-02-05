@@ -3,10 +3,10 @@
 This document tracks the ongoing effort to make XMage accessible to screen reader
 users, specifically **NVDA on Windows** and **VoiceOver on macOS**.
 
-## Current Status: Phase 2 — Card Accessibility (In Progress)
+## Current Status: Phase 3 — Keyboard Navigation (Complete)
 
-Phase 1 (Foundation) is complete. Phase 2 makes individual cards and zone
-containers readable by screen readers.
+Phases 1 (Foundation), 2 (Card Accessibility), and 3 (Keyboard Navigation) are
+complete. Cards are now focusable and clickable via keyboard.
 
 ### What Works After Phase 1
 
@@ -128,22 +128,65 @@ No additional setup is needed beyond enabling VoiceOver (Cmd+F5). However:
 | `Mage.Client/.../game/BattlefieldPanel.java` | Added accessible name with permanent count at end of `update()`. |
 | `Mage.Client/.../cards/CardArea.java` | Added accessible name with card count in `loadCards()`. |
 
+## What Works After Phase 3
+
+- **Cards are focusable**: every card component (`CardPanel`) is now focusable
+  via `setFocusable(true)`. Screen readers announce the card's accessible name
+  when it receives focus.
+
+- **Visual focus indicator**: a bright blue (RGB 0, 180, 255) 3px border is drawn
+  around the focused card so sighted keyboard users can see which card is active.
+
+- **Enter/Space to click a card**: pressing Enter or Space on a focused card
+  triggers the same action as a mouse click. This works for casting spells from
+  hand, activating abilities, selecting targets, and confirming choices.
+
+- **Arrow key navigation within a zone**: Left/Up moves focus to the previous card
+  in the zone; Right/Down moves to the next card. Cards are sorted by visual
+  position (top-to-bottom, then left-to-right).
+
+- **Zone-scoped Tab traversal**: each zone container (hand, stack, battlefield)
+  is a **focus cycle root**. This means:
+  - **Tab / Shift+Tab** cycles between cards within the current zone.
+  - **Ctrl+Tab / Ctrl+Shift+Tab** jumps to the next/previous zone or UI area
+    (standard Swing focus cycle root behavior).
+
+### Keyboard Navigation Quick Reference
+
+| Key | Context | Action |
+|-----|---------|--------|
+| Tab | In a zone | Move to next card in the zone |
+| Shift+Tab | In a zone | Move to previous card in the zone |
+| Ctrl+Tab | Anywhere | Jump to the next zone / UI area |
+| Ctrl+Shift+Tab | Anywhere | Jump to the previous zone / UI area |
+| Left / Up | On a card | Focus the previous card in the zone |
+| Right / Down | On a card | Focus the next card in the zone |
+| Enter / Space | On a card | Click the card (cast, activate, select target) |
+| F2 | Global | Confirm / OK / Done |
+| F3–F11 | Global | Skip/concede shortcuts (see Phase 1 section) |
+
+### How Keyboard Card Clicking Works
+
+When the user presses Enter or Space on a focused card, `CardPanel.fireKeyboardClick()`
+creates a synthetic `MouseEvent` and calls `callback.mouseClicked()` with the same
+`TransferData` (component, card, gameId) that a real mouse click would provide.
+This means all game actions that work via mouse click also work via keyboard:
+
+1. **Casting from hand**: focus a card in the Hand zone, press Enter.
+2. **Activating abilities**: focus a permanent on the Battlefield, press Enter.
+3. **Selecting targets**: when the game prompts for a target, choosable cards are
+   marked (announced as "choosable" by screen readers). Arrow to the target, Enter.
+4. **Confirming choices**: the existing F2 shortcut also works for OK/Done prompts.
+
+## Files Modified in Phase 3
+
+| File | Changes |
+|------|---------|
+| `Mage.Client/.../arcane/CardPanel.java` | Enabled `setFocusable(true)` (was commented out). Added `FocusListener` to repaint on focus change. Added `KeyListener` for Enter/Space (click), Left/Right/Up/Down (navigate). Added `fireKeyboardClick()` method that creates synthetic `MouseEvent` and calls callback. Added `focusAdjacentCard()` method that finds sibling `MageCard` components by position and transfers focus. Added bright blue focus indicator border in `paint()`. |
+| `Mage.Client/.../cards/Cards.java` | Made `cardArea` a focus cycle root (`setFocusCycleRoot(true)`) so Tab cycles within hand/stack zone cards. |
+| `Mage.Client/.../game/BattlefieldPanel.java` | Made `jPanel` a focus cycle root (`setFocusCycleRoot(true)`) so Tab cycles within battlefield permanents. |
+
 ## Roadmap
-
-### Phase 3 — Keyboard Navigation (Next)
-
-Make the game playable without a mouse.
-
-- Implement `FocusTraversalPolicy` per zone for arrow-key navigation between
-  cards.
-- Add Enter/Space to cast focused card or activate its ability.
-- Add zone cycling (Tab to move between hand, battlefield, stack, opponent board).
-- Keyboard-driven targeting: arrow keys to cycle legal targets, Enter to confirm.
-- Keyboard-driven combat: select attackers/blockers from focused cards.
-- Focus indicators (visual border/highlight on currently focused card).
-
-**Key files**: `GamePanel.java`, `PlayAreaPanel.java`, `CardPanel.java`,
-`BattlefieldPanel.java`
 
 ### Phase 4 — Live Announcements
 
@@ -185,6 +228,17 @@ change events.
 
 2. **VoiceOver (macOS)**: Enable VoiceOver (Cmd+F5), launch XMage, use VO+Arrow
    keys to explore the interface. Verify player panels and buttons are read.
+
+3. **Keyboard navigation (Phase 3)**: Start a game against AI.
+   - Press Ctrl+Tab until focus enters the Hand zone. Verify a bright blue border
+     appears around the focused card.
+   - Press Right/Left arrows to move between cards in hand. Verify the blue border
+     moves and the screen reader announces each card's name, type, and cost.
+   - Press Enter on a card in hand to cast it. Verify the game responds as if the
+     card was clicked.
+   - Press Ctrl+Tab to jump to the Battlefield. Use arrows to navigate permanents.
+   - Press Enter on a permanent to activate abilities or select it as a target
+     when prompted.
 
 ### Automated Testing (Future)
 

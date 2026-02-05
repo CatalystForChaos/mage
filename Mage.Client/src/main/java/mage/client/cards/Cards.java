@@ -333,6 +333,10 @@
          cardArea = new javax.swing.JPanel();
          cardArea.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 0));
 
+         // Accessibility: make zone a focus cycle root so Tab cycles within zone cards,
+         // and Ctrl+Tab jumps to the next zone (standard Swing behavior)
+         cardArea.setFocusCycleRoot(true);
+
          if (skipAddingScrollPane) {
              add(cardArea, java.awt.BorderLayout.CENTER);
          } else {
