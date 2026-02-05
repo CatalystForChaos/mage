@@ -2431,7 +2431,6 @@ public final class GamePanel extends javax.swing.JPanel {
         btnToggleMacro.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnToggleMacro.setToolTipText("Toggle Record Macro ("
                 + getCachedKeyText(KEY_CONTROL_TOGGLE_MACRO) + ").");
-        btnToggleMacro.setFocusable(false);
         btnToggleMacro.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnToggleMacroActionPerformed(null)));
 
@@ -2461,14 +2460,14 @@ public final class GamePanel extends javax.swing.JPanel {
         btnCancelSkip.setContentAreaFilled(false);
         btnCancelSkip.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnCancelSkip.setToolTipText("CANCEL all skips");
-        btnCancelSkip.setFocusable(false);
+        btnCancelSkip.getAccessibleContext().setAccessibleName("Cancel all skips");
         btnCancelSkip.addMouseListener(new FirstButtonMousePressedAction(e ->
                 restorePriorityActionPerformed(null)));
 
         btnSkipToNextTurn.setContentAreaFilled(false);
         btnSkipToNextTurn.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToNextTurn.setToolTipText("dynamic");
-        btnSkipToNextTurn.setFocusable(false);
+        btnSkipToNextTurn.getAccessibleContext().setAccessibleName("Skip to next turn");
         btnSkipToNextTurn.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnEndTurnActionPerformed(null)));
 
@@ -2485,7 +2484,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipToEndTurn.setContentAreaFilled(false);
         btnSkipToEndTurn.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToEndTurn.setToolTipText("dynamic");
-        btnSkipToEndTurn.setFocusable(false);
+        btnSkipToEndTurn.getAccessibleContext().setAccessibleName("Skip to end of turn");
         btnSkipToEndTurn.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnUntilEndOfTurnActionPerformed(null)));
 
@@ -2512,7 +2511,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipToNextMain.setContentAreaFilled(false);
         btnSkipToNextMain.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToNextMain.setToolTipText("dynamic");
-        btnSkipToNextMain.setFocusable(false);
+        btnSkipToNextMain.getAccessibleContext().setAccessibleName("Skip to next main phase");
         btnSkipToNextMain.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnUntilNextMainPhaseActionPerformed(null)));
 
@@ -2529,7 +2528,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipToYourTurn.setContentAreaFilled(false);
         btnSkipToYourTurn.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToYourTurn.setToolTipText("dynamic");
-        btnSkipToYourTurn.setFocusable(false);
+        btnSkipToYourTurn.getAccessibleContext().setAccessibleName("Skip to your turn");
         btnSkipToYourTurn.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnPassPriorityUntilNextYourTurnActionPerformed(null)));
 
@@ -2546,7 +2545,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipToEndStepBeforeYourTurn.setContentAreaFilled(false);
         btnSkipToEndStepBeforeYourTurn.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToEndStepBeforeYourTurn.setToolTipText("dynamic");
-        btnSkipToEndStepBeforeYourTurn.setFocusable(false);
+        btnSkipToEndStepBeforeYourTurn.getAccessibleContext().setAccessibleName("Skip to end step before your turn");
         btnSkipToEndStepBeforeYourTurn.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnSkipToEndStepBeforeYourTurnActionPerformed(null)));
 
@@ -2563,7 +2562,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipStack.setContentAreaFilled(false);
         btnSkipStack.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipStack.setToolTipText("dynamic");
-        btnSkipStack.setFocusable(false);
+        btnSkipStack.getAccessibleContext().setAccessibleName("Skip until stack resolved");
         btnSkipStack.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnPassPriorityUntilStackResolvedActionPerformed(null)));
 
@@ -2580,7 +2579,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnConcede.setContentAreaFilled(false);
         btnConcede.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnConcede.setToolTipText("CONCEDE current game");
-        btnConcede.setFocusable(false);
+        btnConcede.getAccessibleContext().setAccessibleName("Concede current game");
         btnConcede.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnConcedeActionPerformed(null)));
 
@@ -2685,15 +2684,15 @@ public final class GamePanel extends javax.swing.JPanel {
 
         btnSwitchHands.setContentAreaFilled(false);
         btnSwitchHands.setBorder(new EmptyBorder(0, 0, 0, 0));
-        btnSwitchHands.setFocusable(false);
         btnSwitchHands.setToolTipText("Switch between your hand cards and hand cards of controlled players.");
+        btnSwitchHands.getAccessibleContext().setAccessibleName("Switch hands");
         btnSwitchHands.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnSwitchHandActionPerformed(null)));
 
         btnStopWatching.setContentAreaFilled(false);
         btnStopWatching.setBorder(new EmptyBorder(0, 0, 0, 0));
-        btnStopWatching.setFocusable(false);
         btnStopWatching.setToolTipText("Stop watching this game.");
+        btnStopWatching.getAccessibleContext().setAccessibleName("Stop watching");
         btnStopWatching.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnStopWatchingActionPerformed(null)));
 
