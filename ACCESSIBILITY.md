@@ -285,6 +285,44 @@ to avoid flooding the screen reader with the initial game state.
 | `Mage.Client/.../dialog/ShowCardsDialog.java` | Added accessible name and description in `loadCards()` using dialog title and card count. |
 | `Mage.Client/.../dialog/PickChoiceDialog.java` | Added accessible name from choice message, plus accessible names for choice list and search field in `showDialog()`. |
 | `Mage.Client/.../dialog/PickPileDialog.java` | Added accessible names to pile buttons in constructor. Added accessible name and description for dialog and both pile areas in `showDialog()`. |
+| `Mage.Client/.../game/GamePanel.java` | Added `initAccessibilityHotkeys()` method with Ctrl+Shift+key bindings for on-demand announcements. Added `announceGameState()`, `announceLifeTotals()`, `announceStack()`, `announceHand()`, `announceBattlefield()`, `announceFocusedCard()`, and `buildCardDescription()` helper methods. |
+
+## Accessibility Announcement Hotkeys
+
+In addition to screen reader auto-announcements (Phase 4), the following hotkeys
+allow users to request on-demand announcements of game state. These work during
+a game when focus is on the game panel.
+
+| Hotkey | Announcement |
+|--------|--------------|
+| Ctrl+Shift+G | **Game state**: turn number, phase, step, active player, priority player |
+| Ctrl+Shift+L | **Life totals**: all players' current life totals |
+| Ctrl+Shift+S | **Stack contents**: number of items and names/abilities on the stack |
+| Ctrl+Shift+H | **Hand summary**: number of cards and names of cards in your hand |
+| Ctrl+Shift+B | **Battlefield summary**: permanent counts by type for all players |
+| Ctrl+Shift+C | **Focused card**: full description of the currently focused card |
+
+### Example Announcements
+
+- **Ctrl+Shift+G**: "Turn 5, Precombat Main. Active player: OpponentName. Priority: You"
+- **Ctrl+Shift+L**: "Life totals: You: 17, OpponentName: 14"
+- **Ctrl+Shift+S**: "Stack has 2 items: Lightning Bolt, Counterspell"
+- **Ctrl+Shift+H**: "Your hand has 4 cards: Island, Lightning Bolt, Counterspell, Brainstorm"
+- **Ctrl+Shift+B**: "Battlefield: You have 3 creatures, 4 lands, 1 other permanent. OpponentName has 2 creatures, 3 lands"
+- **Ctrl+Shift+C**: "Lightning Bolt. Instant. Cost: {R}. Rules: Lightning Bolt deals 3 damage to any target."
+
+### Focused Card Description (Ctrl+Shift+C)
+
+The focused card announcement includes:
+- Card name
+- Type line (e.g., "Creature — Human Wizard")
+- Mana cost
+- Power/toughness (creatures), loyalty (planeswalkers), or defense (battles)
+- Permanent state: tapped/untapped, summoning sickness, counters
+- Full rules text (HTML stripped)
+
+This is useful when navigating cards with arrow keys and wanting to hear the
+complete Oracle text without using screen reader browse mode.
 
 ## Future Improvements
 
@@ -347,6 +385,19 @@ accessibility:
      choose). Verify the dialog title is announced.
    - Verify the deck grid announces card counts (e.g., "Main Deck, 40 cards,
      15 creatures, 17 lands") when exploring with the screen reader.
+
+6. **Accessibility hotkeys**: Start a game against AI with a screen reader active.
+   - Press Ctrl+Shift+G. Verify the turn number, phase, and priority are announced.
+   - Press Ctrl+Shift+L. Verify all players' life totals are announced.
+   - Press Ctrl+Shift+H. Verify your hand card count and card names are announced.
+   - Press Ctrl+Shift+B. Verify battlefield permanent counts are announced for all
+     players.
+   - Focus a card (use Tab/arrow keys to navigate to a card in your hand or
+     battlefield).
+   - Press Ctrl+Shift+C. Verify the full card description is announced (name, type,
+     cost, rules text).
+   - Cast a spell or let the opponent cast one, then press Ctrl+Shift+S. Verify
+     the stack contents are announced.
 
 ### Automated Testing (Future)
 
