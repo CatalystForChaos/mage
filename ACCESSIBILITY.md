@@ -3,12 +3,10 @@
 This document tracks the ongoing effort to make XMage accessible to screen reader
 users, specifically **NVDA on Windows** and **VoiceOver on macOS**.
 
-## Current Status: Phase 4 — Live Announcements (Complete)
+## Current Status: Phase 5 — Deck Editor & Dialogs (Complete)
 
-Phases 1 (Foundation), 2 (Card Accessibility), 3 (Keyboard Navigation), and
-4 (Live Announcements) are complete. Screen readers now proactively announce
-game state changes including phase transitions, priority, life totals, stack
-events, and combat.
+Phases 1 through 5 are complete. The game client and deck editor are now
+accessible to screen reader users with NVDA (Windows) and VoiceOver (macOS).
 
 ### What Works After Phase 1
 
@@ -252,19 +250,56 @@ to avoid flooding the screen reader with the initial game state.
 |------|---------|
 | `Mage.Client/.../game/GamePanel.java` | Added `javax.accessibility.AccessibleContext` import. Added hidden `accessibilityAnnouncer` JLabel in `initComponents()`. Added `announceToScreenReader(String)` method that fires `ACCESSIBLE_NAME_PROPERTY` change events. Added `checkAndAnnounceGameStateChanges(GameView)` that detects phase, priority, life, stack, and combat changes. Added `saveAccessibilityState(GameView)` to persist state between updates. Added 8 tracking fields. Called from end of `updateGame()`. |
 
-## Roadmap
+## What Works After Phase 5
 
-### Phase 5 — Deck Editor & Dialogs (Next)
+- **CardSelector filter buttons are focusable**: all 29 filter toggle buttons
+  (color, type, rarity, view mode, search options) are now focusable via Tab
+  and have accessible names describing their function:
+  - Color: "Filter Red cards", "Filter Green cards", etc.
+  - Type: "Filter Creature cards", "Filter Instant cards", etc.
+  - Rarity: "Filter Common cards", "Filter Mythic Rare cards", etc.
+  - View: "Switch to list view", "Switch to card grid view"
+  - Search: "Search card names", "Search rules text", etc.
 
-- Ensure all modal dialogs (card selection, choice prompts, pick dialogs) have
-  proper tab order and accessible labels.
-- Add keyboard navigation to `DragCardGrid` (image-based deck view).
-- The table-based card views (`CardsList`, `CardSelector`) already use `JTable`
-  which has built-in accessibility — verify they expose column headers and cell
-  values correctly.
+- **Card search field has accessible labels**: the search text field and card
+  list table have accessible names and descriptions.
 
-**Key files**: `DeckEditorPanel.java`, `DragCardGrid.java`, `CardSelector.java`,
-`ShowCardsDialog.java`, all `MageDialog` subclasses
+- **DragCardGrid has accessible descriptions**: the deck grid view now has an
+  accessible name ("Deck card grid") and a dynamically updated description with
+  card counts (e.g., "Main Deck, 40 cards, 15 creatures, 17 lands").
+
+- **Modal dialogs have accessible titles**:
+  - `ShowCardsDialog`: accessible name matches dialog title, description
+    includes card count
+  - `PickChoiceDialog`: accessible name from choice message, search field and
+    choice list have accessible labels
+  - `PickPileDialog`: accessible name and description, pile areas labeled with
+    card counts, buttons labeled "Choose Pile 1/2"
+
+## Files Modified in Phase 5
+
+| File | Changes |
+|------|---------|
+| `Mage.Client/.../deckeditor/CardSelector.java` | Added `initAccessibility()` method that sets `setFocusable(true)` and `setAccessibleName()` on 29 filter buttons/checkboxes, plus search field, table, and combo boxes. Called after `setGUISize()` in constructor. |
+| `Mage.Client/.../cards/DragCardGrid.java` | Added accessible name and description to main panel and cardContent in constructor. Added dynamic accessible description update in `updateCounts()` with card totals. |
+| `Mage.Client/.../dialog/ShowCardsDialog.java` | Added accessible name and description in `loadCards()` using dialog title and card count. |
+| `Mage.Client/.../dialog/PickChoiceDialog.java` | Added accessible name from choice message, plus accessible names for choice list and search field in `showDialog()`. |
+| `Mage.Client/.../dialog/PickPileDialog.java` | Added accessible names to pile buttons in constructor. Added accessible name and description for dialog and both pile areas in `showDialog()`. |
+
+## Future Improvements
+
+The following items are not yet implemented but would further improve
+accessibility:
+
+- **Full keyboard navigation in DragCardGrid**: arrow keys to move between cards,
+  Enter to select, context menu via keyboard
+- **JTable column header accessibility**: custom accessible names for card list
+  columns (currently uses default JTable accessibility)
+- **Focus indicators in deck editor**: visual focus borders matching Phase 3
+  card focus indicators
+- **Drag-and-drop keyboard alternative**: keyboard-based card movement between
+  main deck and sideboard
+- **Deck legality labels**: accessible names for format legality indicators
 
 ## Testing
 
@@ -301,6 +336,17 @@ to avoid flooding the screen reader with the initial game state.
    - Enter combat and verify attacker/blocker announcements.
    - Verify that the initial game load does NOT flood with announcements (first
      update is suppressed).
+
+5. **Deck editor accessibility (Phase 5)**: Open the deck editor.
+   - Use Tab to navigate through the filter toolbar. Verify that color, type,
+     and rarity filter buttons are focusable (previously they were not).
+   - Verify screen reader announces "Filter Red cards", "Filter Creature cards",
+     etc. as you Tab through buttons.
+   - Tab to the search field and verify it's announced as "Search cards".
+   - Open a choice dialog (e.g., during drafting or when a card asks you to
+     choose). Verify the dialog title is announced.
+   - Verify the deck grid announces card counts (e.g., "Main Deck, 40 cards,
+     15 creatures, 17 lands") when exploring with the screen reader.
 
 ### Automated Testing (Future)
 

@@ -96,6 +96,11 @@
                            JPopupMenu popupMenu, Listener<Event> eventListener) {
          this.title = name;
          this.setTitelBarToolTip(name);
+         // Accessibility: expose dialog title and card count to screen readers
+         int cardCount = (showCards != null) ? showCards.size() : 0;
+         this.getAccessibleContext().setAccessibleName(name);
+         this.getAccessibleContext().setAccessibleDescription(name + ", " + cardCount + " card" + (cardCount != 1 ? "s" : ""));
+         cardArea.getAccessibleContext().setAccessibleName("Card selection area, " + cardCount + " card" + (cardCount != 1 ? "s" : ""));
          cardArea.clearCardEventListeners();
          cardArea.loadCards(showCards, bigCard, gameId);
          if (options != null) {

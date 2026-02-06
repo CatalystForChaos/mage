@@ -78,6 +78,13 @@ public class PickChoiceDialog extends MageDialog {
         setMessageText(this.textMessage, choice.getMessage());
         setMessageText(this.textSubMessage, choice.getSubMessage());
 
+        // Accessibility: expose dialog purpose and choice count to screen readers
+        String accessibleTitle = choice.getMessage() != null ? choice.getMessage().replaceAll("<[^>]*>", "") : "Choose an option";
+        this.getAccessibleContext().setAccessibleName(accessibleTitle);
+        listChoices.getAccessibleContext().setAccessibleName("Available choices");
+        editSearch.getAccessibleContext().setAccessibleName("Search choices");
+        editSearch.getAccessibleContext().setAccessibleDescription("Type to filter the list of choices");
+
         btCancel.setEnabled(!choice.isRequired());
 
         // popup support in headers

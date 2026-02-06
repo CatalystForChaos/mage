@@ -36,6 +36,7 @@ public class PickPileDialog extends MageDialog {
 
         JButton btnChoosePile1 = new JButton("Pile 1");
         btnChoosePile1.addActionListener(e -> btnPile1ActionPerformed(e));
+        btnChoosePile1.getAccessibleContext().setAccessibleName("Choose Pile 1");
         panel.add(btnChoosePile1, BorderLayout.NORTH);
 
         JPanel panel_1 = new JPanel();
@@ -47,6 +48,7 @@ public class PickPileDialog extends MageDialog {
 
         JButton btnChoosePile2 = new JButton("Pile 2");
         btnChoosePile2.addActionListener(e -> btnPile2ActionPerformed(e));
+        btnChoosePile2.getAccessibleContext().setAccessibleName("Choose Pile 2");
         panel_1.add(btnChoosePile2, BorderLayout.NORTH);
     }
 
@@ -61,6 +63,14 @@ public class PickPileDialog extends MageDialog {
         this.pile1.loadCardsNarrow(pile1, bigCard, gameId);
         this.pile2.loadCardsNarrow(pile2, bigCard, gameId);
         this.callback = callback;
+
+        // Accessibility: expose dialog purpose and pile contents to screen readers
+        int pile1Count = (pile1 != null) ? pile1.size() : 0;
+        int pile2Count = (pile2 != null) ? pile2.size() : 0;
+        this.getAccessibleContext().setAccessibleName(name != null ? name : "Choose a pile");
+        this.getAccessibleContext().setAccessibleDescription("Choose between two piles of cards");
+        this.pile1.getAccessibleContext().setAccessibleName("Pile 1, " + pile1Count + " card" + (pile1Count != 1 ? "s" : ""));
+        this.pile2.getAccessibleContext().setAccessibleName("Pile 2, " + pile2Count + " card" + (pile2Count != 1 ? "s" : ""));
 
         this.setModal(true);
         pack();
