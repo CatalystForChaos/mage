@@ -36,6 +36,8 @@ import mage.util.MultiAmountMessage;
 import mage.util.StreamUtils;
 import mage.view.*;
 import org.apache.log4j.Logger;
+
+import javax.accessibility.AccessibleContext;
 import org.mage.plugins.card.utils.impl.ImageManagerImpl;
 
 import javax.swing.Timer;
@@ -1318,6 +1320,9 @@ public final class GamePanel extends javax.swing.JPanel {
         feedbackPanel.disableUndo();
         feedbackPanel.updateOptions(lastGameData.options);
 
+        // Accessibility: detect and announce game state changes to screen readers (Phase 4)
+        checkAndAnnounceGameStateChanges(lastGameData.game);
+
         this.revalidate();
         this.repaint();
     }
@@ -2431,7 +2436,6 @@ public final class GamePanel extends javax.swing.JPanel {
         btnToggleMacro.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnToggleMacro.setToolTipText("Toggle Record Macro ("
                 + getCachedKeyText(KEY_CONTROL_TOGGLE_MACRO) + ").");
-        btnToggleMacro.setFocusable(false);
         btnToggleMacro.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnToggleMacroActionPerformed(null)));
 
@@ -2461,14 +2465,14 @@ public final class GamePanel extends javax.swing.JPanel {
         btnCancelSkip.setContentAreaFilled(false);
         btnCancelSkip.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnCancelSkip.setToolTipText("CANCEL all skips");
-        btnCancelSkip.setFocusable(false);
+        btnCancelSkip.getAccessibleContext().setAccessibleName("Cancel all skips");
         btnCancelSkip.addMouseListener(new FirstButtonMousePressedAction(e ->
                 restorePriorityActionPerformed(null)));
 
         btnSkipToNextTurn.setContentAreaFilled(false);
         btnSkipToNextTurn.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToNextTurn.setToolTipText("dynamic");
-        btnSkipToNextTurn.setFocusable(false);
+        btnSkipToNextTurn.getAccessibleContext().setAccessibleName("Skip to next turn");
         btnSkipToNextTurn.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnEndTurnActionPerformed(null)));
 
@@ -2485,7 +2489,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipToEndTurn.setContentAreaFilled(false);
         btnSkipToEndTurn.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToEndTurn.setToolTipText("dynamic");
-        btnSkipToEndTurn.setFocusable(false);
+        btnSkipToEndTurn.getAccessibleContext().setAccessibleName("Skip to end of turn");
         btnSkipToEndTurn.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnUntilEndOfTurnActionPerformed(null)));
 
@@ -2512,7 +2516,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipToNextMain.setContentAreaFilled(false);
         btnSkipToNextMain.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToNextMain.setToolTipText("dynamic");
-        btnSkipToNextMain.setFocusable(false);
+        btnSkipToNextMain.getAccessibleContext().setAccessibleName("Skip to next main phase");
         btnSkipToNextMain.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnUntilNextMainPhaseActionPerformed(null)));
 
@@ -2529,7 +2533,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipToYourTurn.setContentAreaFilled(false);
         btnSkipToYourTurn.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToYourTurn.setToolTipText("dynamic");
-        btnSkipToYourTurn.setFocusable(false);
+        btnSkipToYourTurn.getAccessibleContext().setAccessibleName("Skip to your turn");
         btnSkipToYourTurn.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnPassPriorityUntilNextYourTurnActionPerformed(null)));
 
@@ -2546,7 +2550,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipToEndStepBeforeYourTurn.setContentAreaFilled(false);
         btnSkipToEndStepBeforeYourTurn.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipToEndStepBeforeYourTurn.setToolTipText("dynamic");
-        btnSkipToEndStepBeforeYourTurn.setFocusable(false);
+        btnSkipToEndStepBeforeYourTurn.getAccessibleContext().setAccessibleName("Skip to end step before your turn");
         btnSkipToEndStepBeforeYourTurn.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnSkipToEndStepBeforeYourTurnActionPerformed(null)));
 
@@ -2563,7 +2567,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnSkipStack.setContentAreaFilled(false);
         btnSkipStack.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnSkipStack.setToolTipText("dynamic");
-        btnSkipStack.setFocusable(false);
+        btnSkipStack.getAccessibleContext().setAccessibleName("Skip until stack resolved");
         btnSkipStack.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnPassPriorityUntilStackResolvedActionPerformed(null)));
 
@@ -2580,7 +2584,7 @@ public final class GamePanel extends javax.swing.JPanel {
         btnConcede.setContentAreaFilled(false);
         btnConcede.setBorder(new EmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
         btnConcede.setToolTipText("CONCEDE current game");
-        btnConcede.setFocusable(false);
+        btnConcede.getAccessibleContext().setAccessibleName("Concede current game");
         btnConcede.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnConcedeActionPerformed(null)));
 
@@ -2683,17 +2687,20 @@ public final class GamePanel extends javax.swing.JPanel {
             }
         });
 
+        // Accessibility hotkeys for screen reader announcements
+        initAccessibilityHotkeys(c);
+
         btnSwitchHands.setContentAreaFilled(false);
         btnSwitchHands.setBorder(new EmptyBorder(0, 0, 0, 0));
-        btnSwitchHands.setFocusable(false);
         btnSwitchHands.setToolTipText("Switch between your hand cards and hand cards of controlled players.");
+        btnSwitchHands.getAccessibleContext().setAccessibleName("Switch hands");
         btnSwitchHands.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnSwitchHandActionPerformed(null)));
 
         btnStopWatching.setContentAreaFilled(false);
         btnStopWatching.setBorder(new EmptyBorder(0, 0, 0, 0));
-        btnStopWatching.setFocusable(false);
         btnStopWatching.setToolTipText("Stop watching this game.");
+        btnStopWatching.getAccessibleContext().setAccessibleName("Stop watching");
         btnStopWatching.addMouseListener(new FirstButtonMousePressedAction(e ->
                 btnStopWatchingActionPerformed(null)));
 
@@ -2756,6 +2763,14 @@ public final class GamePanel extends javax.swing.JPanel {
         // split: game <|> chat/log
         splitGameAndBigCard.setLeftComponent(splitBattlefieldAndChats);
         splitGameAndBigCard.setRightComponent(bigCardPanel);
+
+        // Accessibility: hidden component for screen reader live announcements (Phase 4).
+        // Screen readers detect property change events on this label's AccessibleContext.
+        accessibilityAnnouncer = new JLabel();
+        accessibilityAnnouncer.setPreferredSize(new Dimension(0, 0));
+        accessibilityAnnouncer.getAccessibleContext().setAccessibleName("");
+        accessibilityAnnouncer.getAccessibleContext().setAccessibleDescription("Game event announcements");
+        pnlShortCuts.add(accessibilityAnnouncer);
     }
 
     private void removeListener() {
@@ -3203,6 +3218,489 @@ public final class GamePanel extends javax.swing.JPanel {
         }
     }
 
+    // ---- Accessibility: live announcement methods (Phase 4) ----
+
+    /**
+     * Send an announcement to screen readers by updating the hidden announcer
+     * component's accessible name and firing a property change event.
+     */
+    private void announceToScreenReader(String message) {
+        if (accessibilityAnnouncer == null || message == null || message.isEmpty()) {
+            return;
+        }
+        String oldName = accessibilityAnnouncer.getAccessibleContext().getAccessibleName();
+        // Append a zero-width space to force a change event even if the text is the same
+        // (e.g., repeated priority changes to the same player)
+        if (message.equals(oldName)) {
+            message = message + "\u200B";
+        }
+        accessibilityAnnouncer.getAccessibleContext().setAccessibleName(message);
+        accessibilityAnnouncer.getAccessibleContext().firePropertyChange(
+                AccessibleContext.ACCESSIBLE_NAME_PROPERTY, oldName, message);
+    }
+
+    /**
+     * Compare current game state with previously saved state and announce
+     * meaningful changes to screen readers. Called at the end of updateGame().
+     */
+    private void checkAndAnnounceGameStateChanges(GameView game) {
+        if (game == null) {
+            return;
+        }
+
+        // First update: save state without announcing (avoids flooding on game start)
+        if (!accessibilityStateInitialized) {
+            saveAccessibilityState(game);
+            accessibilityStateInitialized = true;
+            return;
+        }
+
+        List<String> announcements = new ArrayList<>();
+
+        // Phase/step changes
+        PhaseStep currentStep = game.getStep();
+        int currentTurn = game.getTurn();
+        if (currentStep != null && currentStep != previousStep) {
+            String stepName = currentStep.toString();
+            if (currentTurn != previousTurn) {
+                announcements.add("Turn " + currentTurn + ", " + stepName);
+            } else {
+                announcements.add(stepName);
+            }
+        } else if (currentTurn != previousTurn && currentTurn > 0) {
+            announcements.add("Turn " + currentTurn);
+        }
+
+        // Priority changes
+        String currentPriority = game.getPriorityPlayerName();
+        if (currentPriority != null && !currentPriority.isEmpty()
+                && !currentPriority.equals(previousPriorityPlayer)) {
+            boolean isMyPriority = false;
+            if (playerId != null) {
+                for (PlayerView player : game.getPlayers()) {
+                    if (player.getPlayerId().equals(playerId)
+                            && player.getName().equals(currentPriority)) {
+                        isMyPriority = true;
+                        break;
+                    }
+                }
+            }
+            if (isMyPriority) {
+                announcements.add("Your priority");
+            } else {
+                announcements.add(currentPriority + "'s priority");
+            }
+        }
+
+        // Life total changes
+        for (PlayerView player : game.getPlayers()) {
+            Integer prevLife = previousLifeTotals.get(player.getPlayerId());
+            if (prevLife != null && prevLife != player.getLife()) {
+                boolean isMe = player.getPlayerId().equals(playerId);
+                String name = isMe ? "Your" : player.getName() + "'s";
+                announcements.add(name + " life: " + prevLife + " -> " + player.getLife());
+            }
+        }
+
+        // Stack changes — announce new entries
+        Set<UUID> currentStackIds = new HashSet<>(game.getStack().keySet());
+        for (UUID stackId : currentStackIds) {
+            if (!previousStackIds.contains(stackId)) {
+                CardView card = game.getStack().get(stackId);
+                if (card != null) {
+                    String stackItemName;
+                    if (card instanceof StackAbilityView) {
+                        List<String> rules = card.getRules();
+                        if (!rules.isEmpty()) {
+                            stackItemName = rules.get(0).replaceAll("<[^>]*>", "").trim();
+                        } else {
+                            stackItemName = "Ability from " + card.getName();
+                        }
+                    } else {
+                        stackItemName = card.getName();
+                    }
+                    announcements.add(stackItemName + " on the stack");
+                }
+            }
+        }
+
+        // Combat changes — announce attackers and blockers
+        List<CombatGroupView> combat = game.getCombat();
+        int currentCombatGroups = (combat != null) ? combat.size() : 0;
+        if (currentCombatGroups > 0 && currentCombatGroups != previousCombatGroupCount) {
+            StringBuilder combatText = new StringBuilder("Combat: ");
+            boolean first = true;
+            for (CombatGroupView group : combat) {
+                for (CardView attacker : group.getAttackers().values()) {
+                    if (!first) {
+                        combatText.append(", ");
+                    }
+                    combatText.append(attacker.getName()).append(" attacking");
+                    if (!group.getDefenderName().isEmpty()) {
+                        combatText.append(" ").append(group.getDefenderName());
+                    }
+                    if (group.isBlocked()) {
+                        combatText.append(" blocked");
+                        boolean firstBlocker = true;
+                        for (CardView blocker : group.getBlockers().values()) {
+                            if (firstBlocker) {
+                                combatText.append(" by ");
+                                firstBlocker = false;
+                            } else {
+                                combatText.append(" and ");
+                            }
+                            combatText.append(blocker.getName());
+                        }
+                    }
+                    first = false;
+                }
+            }
+            announcements.add(combatText.toString());
+        }
+
+        // Save current state for next comparison
+        saveAccessibilityState(game);
+
+        // Fire announcement
+        if (!announcements.isEmpty()) {
+            announceToScreenReader(String.join(". ", announcements));
+        }
+    }
+
+    /**
+     * Save current game state for accessibility change detection.
+     */
+    private void saveAccessibilityState(GameView game) {
+        previousStep = game.getStep();
+        previousTurn = game.getTurn();
+        previousPriorityPlayer = game.getPriorityPlayerName() != null
+                ? game.getPriorityPlayerName() : "";
+        previousLifeTotals.clear();
+        for (PlayerView player : game.getPlayers()) {
+            previousLifeTotals.put(player.getPlayerId(), player.getLife());
+        }
+        previousStackIds = new HashSet<>(game.getStack().keySet());
+        List<CombatGroupView> combat = game.getCombat();
+        previousCombatGroupCount = (combat != null) ? combat.size() : 0;
+    }
+
+    /**
+     * Accessibility: register keyboard shortcuts for on-demand announcements.
+     * Uses Ctrl+Shift+key combinations to avoid conflicts with existing shortcuts.
+     */
+    private void initAccessibilityHotkeys(int inputMapCondition) {
+        // Ctrl+Shift+G - Game state (turn, phase, priority)
+        KeyStroke ksGameState = KeyStroke.getKeyStroke(KeyEvent.VK_G,
+                InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK);
+        this.getInputMap(inputMapCondition).put(ksGameState, "ANNOUNCE_GAME_STATE");
+        this.getActionMap().put("ANNOUNCE_GAME_STATE", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                announceGameState();
+            }
+        });
+
+        // Ctrl+Shift+L - Life totals
+        KeyStroke ksLifeTotals = KeyStroke.getKeyStroke(KeyEvent.VK_L,
+                InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK);
+        this.getInputMap(inputMapCondition).put(ksLifeTotals, "ANNOUNCE_LIFE_TOTALS");
+        this.getActionMap().put("ANNOUNCE_LIFE_TOTALS", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                announceLifeTotals();
+            }
+        });
+
+        // Ctrl+Shift+S - Stack contents
+        KeyStroke ksStack = KeyStroke.getKeyStroke(KeyEvent.VK_S,
+                InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK);
+        this.getInputMap(inputMapCondition).put(ksStack, "ANNOUNCE_STACK");
+        this.getActionMap().put("ANNOUNCE_STACK", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                announceStack();
+            }
+        });
+
+        // Ctrl+Shift+H - Hand summary
+        KeyStroke ksHand = KeyStroke.getKeyStroke(KeyEvent.VK_H,
+                InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK);
+        this.getInputMap(inputMapCondition).put(ksHand, "ANNOUNCE_HAND");
+        this.getActionMap().put("ANNOUNCE_HAND", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                announceHand();
+            }
+        });
+
+        // Ctrl+Shift+B - Battlefield summary
+        KeyStroke ksBattlefield = KeyStroke.getKeyStroke(KeyEvent.VK_B,
+                InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK);
+        this.getInputMap(inputMapCondition).put(ksBattlefield, "ANNOUNCE_BATTLEFIELD");
+        this.getActionMap().put("ANNOUNCE_BATTLEFIELD", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                announceBattlefield();
+            }
+        });
+
+        // Ctrl+Shift+C - Focused card description
+        KeyStroke ksCard = KeyStroke.getKeyStroke(KeyEvent.VK_C,
+                InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK);
+        this.getInputMap(inputMapCondition).put(ksCard, "ANNOUNCE_FOCUSED_CARD");
+        this.getActionMap().put("ANNOUNCE_FOCUSED_CARD", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                announceFocusedCard();
+            }
+        });
+    }
+
+    /**
+     * Accessibility: announce current game state (turn, phase, priority, active player).
+     */
+    private void announceGameState() {
+        if (lastGameData == null || lastGameData.game == null) {
+            announceToScreenReader("No game data available");
+            return;
+        }
+        GameView game = lastGameData.game;
+        StringBuilder sb = new StringBuilder();
+        sb.append("Turn ").append(game.getTurn());
+        if (game.getPhase() != null) {
+            sb.append(", ").append(game.getPhase().toString());
+        }
+        if (game.getStep() != null) {
+            sb.append(", ").append(game.getStep().toString());
+        }
+        sb.append(". Active player: ").append(game.getActivePlayerName());
+        sb.append(". Priority: ").append(game.getPriorityPlayerName());
+        announceToScreenReader(sb.toString());
+    }
+
+    /**
+     * Accessibility: announce all players' life totals.
+     */
+    private void announceLifeTotals() {
+        if (lastGameData == null || lastGameData.game == null) {
+            announceToScreenReader("No game data available");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Life totals: ");
+        boolean first = true;
+        for (PlayerView player : lastGameData.game.getPlayers()) {
+            if (!first) {
+                sb.append(", ");
+            }
+            boolean isMe = player.getPlayerId().equals(playerId);
+            sb.append(isMe ? "You" : player.getName());
+            sb.append(": ").append(player.getLife());
+            first = false;
+        }
+        announceToScreenReader(sb.toString());
+    }
+
+    /**
+     * Accessibility: announce stack contents.
+     */
+    private void announceStack() {
+        if (lastGameData == null || lastGameData.game == null) {
+            announceToScreenReader("No game data available");
+            return;
+        }
+        CardsView stack = lastGameData.game.getStack();
+        if (stack == null || stack.isEmpty()) {
+            announceToScreenReader("Stack is empty");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Stack has ").append(stack.size());
+        sb.append(stack.size() == 1 ? " item: " : " items: ");
+        boolean first = true;
+        for (CardView card : stack.values()) {
+            if (!first) {
+                sb.append(", ");
+            }
+            if (card instanceof StackAbilityView) {
+                List<String> rules = card.getRules();
+                if (!rules.isEmpty()) {
+                    sb.append(rules.get(0).replaceAll("<[^>]*>", "").trim());
+                } else {
+                    sb.append("Ability from ").append(card.getName());
+                }
+            } else {
+                sb.append(card.getName());
+            }
+            first = false;
+        }
+        announceToScreenReader(sb.toString());
+    }
+
+    /**
+     * Accessibility: announce hand summary (card count and names).
+     */
+    private void announceHand() {
+        if (lastGameData == null || lastGameData.game == null) {
+            announceToScreenReader("No game data available");
+            return;
+        }
+        CardsView hand = lastGameData.game.getMyHand();
+        if (hand == null || hand.isEmpty()) {
+            announceToScreenReader("Your hand is empty");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Your hand has ").append(hand.size());
+        sb.append(hand.size() == 1 ? " card: " : " cards: ");
+        boolean first = true;
+        for (CardView card : hand.values()) {
+            if (!first) {
+                sb.append(", ");
+            }
+            sb.append(card.getName());
+            first = false;
+        }
+        announceToScreenReader(sb.toString());
+    }
+
+    /**
+     * Accessibility: announce battlefield summary for all players.
+     */
+    private void announceBattlefield() {
+        if (lastGameData == null || lastGameData.game == null) {
+            announceToScreenReader("No game data available");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Battlefield: ");
+        boolean firstPlayer = true;
+        for (PlayerView player : lastGameData.game.getPlayers()) {
+            if (!firstPlayer) {
+                sb.append(". ");
+            }
+            boolean isMe = player.getPlayerId().equals(playerId);
+            sb.append(isMe ? "You have " : player.getName() + " has ");
+
+            Map<UUID, PermanentView> battlefield = player.getBattlefield();
+            if (battlefield == null || battlefield.isEmpty()) {
+                sb.append("no permanents");
+            } else {
+                int creatures = 0, lands = 0, others = 0;
+                for (PermanentView perm : battlefield.values()) {
+                    if (perm.isCreature()) {
+                        creatures++;
+                    } else if (perm.isLand()) {
+                        lands++;
+                    } else {
+                        others++;
+                    }
+                }
+                List<String> parts = new ArrayList<>();
+                if (creatures > 0) {
+                    parts.add(creatures + (creatures == 1 ? " creature" : " creatures"));
+                }
+                if (lands > 0) {
+                    parts.add(lands + (lands == 1 ? " land" : " lands"));
+                }
+                if (others > 0) {
+                    parts.add(others + " other " + (others == 1 ? "permanent" : "permanents"));
+                }
+                sb.append(String.join(", ", parts));
+            }
+            firstPlayer = false;
+        }
+        announceToScreenReader(sb.toString());
+    }
+
+    /**
+     * Accessibility: announce the currently focused card's full description.
+     */
+    private void announceFocusedCard() {
+        // Get the currently focused component
+        Component focused = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+        if (focused instanceof MageCard) {
+            MageCard mageCard = (MageCard) focused;
+            CardView card = mageCard.getOriginal();
+            if (card != null) {
+                announceToScreenReader(buildCardDescription(card));
+                return;
+            }
+        }
+        // Try to find a focused card in the parent hierarchy
+        while (focused != null) {
+            if (focused instanceof MageCard) {
+                MageCard mageCard = (MageCard) focused;
+                CardView card = mageCard.getOriginal();
+                if (card != null) {
+                    announceToScreenReader(buildCardDescription(card));
+                    return;
+                }
+            }
+            focused = focused.getParent();
+        }
+        announceToScreenReader("No card is currently focused. Use Tab or arrow keys to focus a card.");
+    }
+
+    /**
+     * Accessibility: build a full description of a card for announcement.
+     */
+    private String buildCardDescription(CardView card) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(card.getName());
+
+        // Type line
+        String typeText = card.getType();
+        if (typeText != null && !typeText.isEmpty()) {
+            sb.append(". ").append(typeText);
+        }
+
+        // Mana cost
+        if (!card.getManaCostStr().isEmpty()) {
+            sb.append(". Cost: ").append(card.getManaCostStr());
+        }
+
+        // Power/Toughness, Loyalty, or Defense
+        if (card.isCreature()) {
+            sb.append(". ").append(card.getPower()).append("/").append(card.getToughness());
+        } else if (card.isPlaneswalker()) {
+            sb.append(". Loyalty: ").append(card.getLoyalty());
+        } else if (card.isBattle()) {
+            sb.append(". Defense: ").append(card.getDefense());
+        }
+
+        // Permanent state
+        if (card instanceof PermanentView) {
+            PermanentView perm = (PermanentView) card;
+            if (perm.isTapped()) {
+                sb.append(". Tapped");
+            }
+            if (perm.hasSummoningSickness()) {
+                sb.append(". Summoning sickness");
+            }
+            if (perm.getCounters() != null) {
+                for (CounterView counter : perm.getCounters()) {
+                    sb.append(". ").append(counter.getCount()).append(" ");
+                    sb.append(counter.getName());
+                    sb.append(counter.getCount() != 1 ? " counters" : " counter");
+                }
+            }
+        }
+
+        // Rules text
+        if (card.getRules() != null && !card.getRules().isEmpty()) {
+            sb.append(". Rules: ");
+            boolean firstRule = true;
+            for (String rule : card.getRules()) {
+                if (!firstRule) {
+                    sb.append(" ");
+                }
+                sb.append(rule.replaceAll("<[^>]*>", "").trim());
+                firstRule = false;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    // ---- End accessibility methods ----
+
     private boolean holdingPriority;
     private mage.client.components.ability.AbilityPicker abilityPicker;
     private mage.client.cards.BigCard bigCard;
@@ -3261,6 +3759,16 @@ public final class GamePanel extends javax.swing.JPanel {
     private javax.swing.JLabel txtHoldPriority;
 
     private boolean imagePanelState;
+
+    // Accessibility: state tracking for live announcements (Phase 4)
+    private PhaseStep previousStep;
+    private String previousPriorityPlayer = "";
+    private int previousTurn = 0;
+    private Map<UUID, Integer> previousLifeTotals = new HashMap<>();
+    private Set<UUID> previousStackIds = new HashSet<>();
+    private int previousCombatGroupCount = 0;
+    private boolean accessibilityStateInitialized = false;
+    private JLabel accessibilityAnnouncer;
 
 }
 

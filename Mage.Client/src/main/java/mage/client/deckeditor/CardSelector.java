@@ -72,6 +72,7 @@ public class CardSelector extends javax.swing.JPanel implements ComponentListene
         makeTransparent();
         initListViewComponents();
         setGUISize();
+        initAccessibility(); // Phase 5: make filter buttons focusable and add accessible names
         currentView = mainModel; // by default we use List View
 
         // prepare search dialog with checkboxes
@@ -184,6 +185,94 @@ public class CardSelector extends javax.swing.JPanel implements ComponentListene
         mainTable.setFont(GUISizeHelper.tableFont);
         mainTable.setRowHeight(GUISizeHelper.tableRowHeight);
 
+    }
+
+    /**
+     * Accessibility: make filter buttons focusable and add accessible names
+     * so screen readers can identify them. (Phase 5)
+     */
+    private void initAccessibility() {
+        // Color filter buttons
+        tbRed.setFocusable(true);
+        tbRed.getAccessibleContext().setAccessibleName("Filter Red cards");
+        tbGreen.setFocusable(true);
+        tbGreen.getAccessibleContext().setAccessibleName("Filter Green cards");
+        tbBlue.setFocusable(true);
+        tbBlue.getAccessibleContext().setAccessibleName("Filter Blue cards");
+        tbBlack.setFocusable(true);
+        tbBlack.getAccessibleContext().setAccessibleName("Filter Black cards");
+        tbWhite.setFocusable(true);
+        tbWhite.getAccessibleContext().setAccessibleName("Filter White cards");
+        tbColorless.setFocusable(true);
+        tbColorless.getAccessibleContext().setAccessibleName("Filter Colorless cards");
+
+        // Card type filter buttons
+        tbLand.setFocusable(true);
+        tbLand.getAccessibleContext().setAccessibleName("Filter Land cards");
+        tbCreatures.setFocusable(true);
+        tbCreatures.getAccessibleContext().setAccessibleName("Filter Creature cards");
+        tbArifiacts.setFocusable(true);
+        tbArifiacts.getAccessibleContext().setAccessibleName("Filter Artifact cards");
+        tbSorceries.setFocusable(true);
+        tbSorceries.getAccessibleContext().setAccessibleName("Filter Sorcery cards");
+        tbInstants.setFocusable(true);
+        tbInstants.getAccessibleContext().setAccessibleName("Filter Instant cards");
+        tbEnchantments.setFocusable(true);
+        tbEnchantments.getAccessibleContext().setAccessibleName("Filter Enchantment cards");
+        tbPlaneswalkers.setFocusable(true);
+        tbPlaneswalkers.getAccessibleContext().setAccessibleName("Filter Planeswalker cards");
+
+        // Rarity filter buttons
+        tbCommon.setFocusable(true);
+        tbCommon.getAccessibleContext().setAccessibleName("Filter Common cards");
+        tbUncommon.setFocusable(true);
+        tbUncommon.getAccessibleContext().setAccessibleName("Filter Uncommon cards");
+        tbRare.setFocusable(true);
+        tbRare.getAccessibleContext().setAccessibleName("Filter Rare cards");
+        tbMythic.setFocusable(true);
+        tbMythic.getAccessibleContext().setAccessibleName("Filter Mythic Rare cards");
+        tbSpecial.setFocusable(true);
+        tbSpecial.getAccessibleContext().setAccessibleName("Filter Special rarity cards");
+
+        // View toggle buttons
+        jToggleListView.setFocusable(true);
+        jToggleListView.getAccessibleContext().setAccessibleName("Switch to list view");
+        jToggleCardView.setFocusable(true);
+        jToggleCardView.getAccessibleContext().setAccessibleName("Switch to card grid view");
+        chkPiles.setFocusable(true);
+        chkPiles.getAccessibleContext().setAccessibleName("Group cards into piles");
+
+        // Search option checkboxes
+        chkNames.setFocusable(true);
+        chkNames.getAccessibleContext().setAccessibleName("Search card names");
+        chkTypes.setFocusable(true);
+        chkTypes.getAccessibleContext().setAccessibleName("Search card types");
+        chkRules.setFocusable(true);
+        chkRules.getAccessibleContext().setAccessibleName("Search rules text");
+        chkUnique.setFocusable(true);
+        chkUnique.getAccessibleContext().setAccessibleName("Show unique cards only");
+
+        // Other buttons
+        btnExpansionSearch.setFocusable(true);
+        btnExpansionSearch.getAccessibleContext().setAccessibleName("Select expansion sets");
+        btnBooster.setFocusable(true);
+        btnBooster.getAccessibleContext().setAccessibleName("Open booster pack");
+        btnClear.setFocusable(true);
+        btnClear.getAccessibleContext().setAccessibleName("Clear all filters");
+        chkPennyDreadful.setFocusable(true);
+        chkPennyDreadful.getAccessibleContext().setAccessibleName("Penny Dreadful legal only");
+
+        // Search field
+        jTextFieldSearch.getAccessibleContext().setAccessibleName("Search cards");
+        jTextFieldSearch.getAccessibleContext().setAccessibleDescription("Type to search for cards by name, type, or rules text");
+
+        // Card table
+        mainTable.getAccessibleContext().setAccessibleName("Card list");
+        mainTable.getAccessibleContext().setAccessibleDescription("List of cards matching current filters");
+
+        // Expansion set combo box
+        cbExpansionSet.getAccessibleContext().setAccessibleName("Expansion set filter");
+        cbSortBy.getAccessibleContext().setAccessibleName("Sort cards by");
     }
 
     public void switchToGrid() {

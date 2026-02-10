@@ -263,6 +263,10 @@ public class BattlefieldPanel extends javax.swing.JLayeredPane {
             this.battlefield = battlefield;
             sortLayout();
         }
+
+        // Accessibility: update battlefield description with permanent count
+        int permCount = permanents.size();
+        this.getAccessibleContext().setAccessibleName("Battlefield, " + permCount + (permCount == 1 ? " permanent" : " permanents"));
     }
 
     public void sortLayout() {
@@ -343,6 +347,11 @@ public class BattlefieldPanel extends javax.swing.JLayeredPane {
         jPanel = new JLayeredPane();
         jPanel.setLayout(null);
         jPanel.setOpaque(false);
+
+        // Accessibility: make battlefield a focus cycle root so Tab cycles within
+        // battlefield permanents, and Ctrl+Tab jumps to the next zone
+        jPanel.setFocusCycleRoot(true);
+
         jScrollPane = new JScrollPane(jPanel);
         if (DebugUtil.GUI_GAME_DRAW_BATTLEFIELD_BORDER) {
             jPanel.setBorder(BorderFactory.createLineBorder(Color.MAGENTA));

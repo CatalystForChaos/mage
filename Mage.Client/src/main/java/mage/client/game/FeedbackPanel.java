@@ -147,8 +147,14 @@ public class FeedbackPanel extends javax.swing.JPanel {
     private void setButtonState(String leftText, String rightText, FeedbackMode mode) {
         btnLeft.setVisible(!leftText.isEmpty());
         btnLeft.setText(leftText);
+        if (!leftText.isEmpty()) {
+            btnLeft.getAccessibleContext().setAccessibleName(leftText);
+        }
         btnRight.setVisible(!rightText.isEmpty());
         btnRight.setText(rightText);
+        if (!rightText.isEmpty()) {
+            btnRight.getAccessibleContext().setAccessibleName(rightText);
+        }
         this.helper.setState(leftText, !leftText.isEmpty(), rightText, !rightText.isEmpty(), mode);
     }
 
@@ -185,11 +191,17 @@ public class FeedbackPanel extends javax.swing.JPanel {
             if (this.lastOptions.containsKey("UI.left.btn.text")) {
                 String text = (String) this.lastOptions.get("UI.left.btn.text");
                 this.btnLeft.setText(text);
+                if (!text.isEmpty()) {
+                    this.btnLeft.getAccessibleContext().setAccessibleName(text);
+                }
                 this.helper.setLeft(text, !text.isEmpty());
             }
             if (this.lastOptions.containsKey("UI.right.btn.text")) {
                 String text = (String) this.lastOptions.get("UI.right.btn.text");
                 this.btnRight.setText(text);
+                if (!text.isEmpty()) {
+                    this.btnRight.getAccessibleContext().setAccessibleName(text);
+                }
                 this.helper.setRight(text, !text.isEmpty());
             }
             updateConnectedDialog((MageDialog) this.lastOptions.getOrDefault("dialog", null));
@@ -246,16 +258,23 @@ public class FeedbackPanel extends javax.swing.JPanel {
 
         setBackground(new java.awt.Color(0, 0, 0, 80));
 
+        // Accessibility: set panel-level accessible name
+        this.getAccessibleContext().setAccessibleName("Game feedback panel");
+
         btnRight.setText("Cancel");
+        btnRight.getAccessibleContext().setAccessibleName("Cancel");
         btnRight.addActionListener(evt -> btnRightActionPerformed(evt));
 
         btnLeft.setText("OK");
+        btnLeft.getAccessibleContext().setAccessibleName("OK");
         btnLeft.addActionListener(evt -> btnLeftActionPerformed(evt));
 
         btnSpecial.setText("Special");
+        btnSpecial.getAccessibleContext().setAccessibleName("Special");
         btnSpecial.addActionListener(evt -> btnSpecialActionPerformed(evt));
 
         btnUndo.setText("Undo");
+        btnUndo.getAccessibleContext().setAccessibleName("Undo");
         btnUndo.addActionListener(evt -> btnUndoActionPerformed(evt));
 
     }

@@ -153,18 +153,22 @@ public class HelperPanel extends JPanel {
 
         btnSpecial = new JButton("Special");
         btnSpecial.setVisible(false);
+        btnSpecial.getAccessibleContext().setAccessibleName("Special");
         buttonGrid.add(btnSpecial);
 
         btnLeft = new JButton("OK");
         btnLeft.setVisible(false);
+        btnLeft.getAccessibleContext().setAccessibleName("OK");
         buttonGrid.add(btnLeft);
 
         btnRight = new JButton("Cancel");
         btnRight.setVisible(false);
+        btnRight.getAccessibleContext().setAccessibleName("Cancel");
         buttonGrid.add(btnRight);
 
         btnUndo = new JButton("Undo");
         btnUndo.setVisible(false);
+        btnUndo.getAccessibleContext().setAccessibleName("Undo");
         buttonGrid.add(btnUndo);
 
         MouseListener checkPopupAdapter = new MouseAdapter() {
@@ -250,6 +254,7 @@ public class HelperPanel extends JPanel {
         this.btnLeft.setVisible(leftVisible);
         if (!txtLeft.isEmpty()) {
             this.btnLeft.setText(txtLeft);
+            this.btnLeft.getAccessibleContext().setAccessibleName(txtLeft);
             if (mode != null) {
                 this.btnLeft.setActionCommand(mode + txtLeft);
             }
@@ -258,6 +263,7 @@ public class HelperPanel extends JPanel {
         this.btnRight.setVisible(rightVisible);
         if (!txtRight.isEmpty()) {
             this.btnRight.setText(txtRight);
+            this.btnRight.getAccessibleContext().setAccessibleName(txtRight);
             if (mode != null) {
                 this.btnRight.setActionCommand(mode + txtRight);
             }
@@ -277,6 +283,7 @@ public class HelperPanel extends JPanel {
     public void setSpecial(String txtSpecial, boolean specialVisible) {
         this.btnSpecial.setVisible(specialVisible);
         this.btnSpecial.setText(txtSpecial);
+        this.btnSpecial.getAccessibleContext().setAccessibleName(txtSpecial);
     }
 
     public void setUndoEnabled(boolean enabled) {
@@ -288,6 +295,7 @@ public class HelperPanel extends JPanel {
         this.btnLeft.setVisible(visible);
         if (!text.isEmpty()) {
             this.btnLeft.setText(text);
+            this.btnLeft.getAccessibleContext().setAccessibleName(text);
         }
         autoSizeButtonsAndFeedbackState();
     }
@@ -296,6 +304,7 @@ public class HelperPanel extends JPanel {
         this.btnRight.setVisible(rightVisible);
         if (!txtRight.isEmpty()) {
             this.btnRight.setText(txtRight);
+            this.btnRight.getAccessibleContext().setAccessibleName(txtRight);
         }
         autoSizeButtonsAndFeedbackState();
     }
@@ -422,6 +431,11 @@ public class HelperPanel extends JPanel {
         this.basicMessage = basicMessage;
         this.secondaryMessage = secondaryMessage;
         redrawMessages();
+
+        // Accessibility: expose the prompt text to screen readers
+        String accessibleText = basicMessage != null ? basicMessage.replaceAll("<[^>]*>", "") : "";
+        this.getAccessibleContext().setAccessibleName("Game prompt: " + accessibleText);
+        this.dialogTextArea.getAccessibleContext().setAccessibleName(accessibleText);
     }
 
     private void redrawMessages() {

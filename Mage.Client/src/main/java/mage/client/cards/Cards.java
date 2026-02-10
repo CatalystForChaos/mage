@@ -214,6 +214,10 @@
          this.revalidate();
          this.repaint();
 
+         // Accessibility: update zone description with card count
+         String zoneName = (zone != null) ? zone.toString() : "Cards";
+         this.getAccessibleContext().setAccessibleName(zoneName + " zone, " + cards.size() + (cards.size() == 1 ? " card" : " cards"));
+
          // auto-scroll (must use it at the end)
          if (changed && moveScrollbar) {
              SwingUtilities.invokeLater(() -> {
@@ -329,6 +333,10 @@
          cardArea = new javax.swing.JPanel();
          cardArea.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 0));
 
+         // Accessibility: make zone a focus cycle root so Tab cycles within zone cards,
+         // and Ctrl+Tab jumps to the next zone (standard Swing behavior)
+         cardArea.setFocusCycleRoot(true);
+
          if (skipAddingScrollPane) {
              add(cardArea, java.awt.BorderLayout.CENTER);
          } else {
@@ -381,6 +389,10 @@
 
      public void setZone(Zone zone) {
          this.zone = zone;
+         // Accessibility: label the zone for screen readers
+         if (zone != null) {
+             this.getAccessibleContext().setAccessibleName(zone.toString() + " zone");
+         }
      }
 
      /**

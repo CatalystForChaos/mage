@@ -195,9 +195,16 @@ public class PlayerPanelExt extends javax.swing.JPanel {
 
     private void setTextForLabel(String category, JLabel label, JComponent relatedComponent, int amount, boolean alwaysBlack, Color fontColor) {
         label.setText(Integer.toString(amount));
-        label.setToolTipText(category + ": " + amount);
+        String displayText = category + ": " + amount;
+        label.setToolTipText(displayText);
         if (relatedComponent != null) {
-            relatedComponent.setToolTipText(category + ": " + amount);
+            relatedComponent.setToolTipText(displayText);
+        }
+
+        // Accessibility: expose label content to screen readers (NVDA, VoiceOver)
+        label.getAccessibleContext().setAccessibleName(displayText);
+        if (relatedComponent != null) {
+            relatedComponent.getAccessibleContext().setAccessibleName(displayText);
         }
 
         if (amount != 0 || alwaysBlack) {
@@ -434,6 +441,14 @@ public class PlayerPanelExt extends javax.swing.JPanel {
         }
 
         update(player.getManaPool());
+
+        // Accessibility: set overall panel description for screen readers
+        String playerDescription = player.getName()
+                + (this.isMe ? " (you)" : " (opponent)")
+                + ", life: " + player.getLife()
+                + ", hand: " + player.getHandCount()
+                + ", library: " + player.getLibraryCount();
+        this.getAccessibleContext().setAccessibleName(playerDescription);
     }
 
     private void resetBackgroundColor() {

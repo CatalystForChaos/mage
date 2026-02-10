@@ -750,6 +750,11 @@ public class DragCardGrid extends JPanel implements DragCardSource, DragCardTarg
         cardContent.setLayout(null);
         cardContent.setOpaque(false);
 
+        // Accessibility: set accessible names for screen readers
+        this.getAccessibleContext().setAccessibleName("Deck card grid");
+        this.getAccessibleContext().setAccessibleDescription("Grid view of cards in your deck. Use Alt+click for sideboard actions.");
+        cardContent.getAccessibleContext().setAccessibleName("Card display area");
+
         // ENABLE MOUSE CLICKS (cards, menu)
         this.cardListener = event -> {
             switch (event.getEventType()) {
@@ -1959,6 +1964,14 @@ public class DragCardGrid extends JPanel implements DragCardSource, DragCardTarg
             }
             button.setText(text);
         }
+
+        // Accessibility: update accessible description with card counts
+        String accessibleDesc = role.getName() + ", " + maindeckCount + " cards";
+        if (extraDeckCount > 0) {
+            accessibleDesc += " plus " + extraDeckCount + " extra deck cards";
+        }
+        accessibleDesc += ", " + creatureCounter.get() + " creatures, " + landCounter.get() + " lands";
+        this.getAccessibleContext().setAccessibleDescription(accessibleDesc);
     }
 
     private void showCardRightClickMenu(@SuppressWarnings("unused") final CardView card, MouseEvent e) {
